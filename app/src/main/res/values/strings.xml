@@ -1,0 +1,8 @@
+<resources>
+    <string name="app_name">Homework19</string>
+    <string name="anime">anime:</string>
+    <string name="character">character:</string>
+    <string name="show_quote">show quote</string>
+    <string name="get_random_quotes">get random quotes</string>
+    <string name="quote">quote:</string>
+</resources>
