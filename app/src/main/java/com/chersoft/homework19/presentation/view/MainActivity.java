@@ -16,12 +16,13 @@ import com.chersoft.homework19.databinding.ActivityMainBinding;
 import com.chersoft.homework19.data.model.AnimeQuoteModel;
 import com.chersoft.homework19.presentation.view.adapter.MainRecyclerAdapter;
 
+import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 
 /**
  * Главная активность приложения.
  */
-public class MainActivity extends AppCompatActivity implements com.chersoft.homework19.presentation.view.View {
+public class MainActivity extends AppCompatActivity {
 
     private ViewModel viewModel;
     private ActivityMainBinding binding;
@@ -32,11 +33,8 @@ public class MainActivity extends AppCompatActivity implements com.chersoft.home
 
         binding = ActivityMainBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
-        binding.getQuotesButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                viewModel.onGetRandomQuotesButtonPressed();
-            }
+        binding.getQuotesButton.setOnClickListener(v -> {
+            viewModel.onGetRandomQuotesButtonPressed();
         });
 
         createViewModel();
@@ -52,38 +50,38 @@ public class MainActivity extends AppCompatActivity implements com.chersoft.home
             }
         });
         viewModel = viewModelProvider.get(ViewModel.class);
-        viewModel.setView(this);
+        viewModel.onCreate();
     }
 
     private void setUpBindings(){
-        viewModel.getProgressLiveData().observe(this, new Observer<Boolean>() {
-            @Override
-            public void onChanged(Boolean aBoolean) {
-                binding.progressBar.setVisibility(aBoolean ? View.VISIBLE : View.GONE);
+        viewModel.getProgressLiveData().observe(this, value -> {
+            binding.progressBar.setVisibility(value ? View.VISIBLE : View.GONE);
+        });
+        viewModel.getListLiveData().observe(this, list -> {
+            MainRecyclerAdapter adapter = new MainRecyclerAdapter(list, model -> {
+                viewModel.onShowQuoteButtonPressed(model);
+            });
+            binding.mainRecyclerView.setAdapter(adapter);
+            binding.mainRecyclerView.setLayoutManager(new LinearLayoutManager(MainActivity.this));
+        });
+
+        // чтобы в лямбдах не оказались сильные ссылки на Activity
+        final WeakReference<MainActivity> thisWeakReference = new WeakReference<>(this);
+
+        viewModel.getSecondActivityLifeData().observe(this, animeQuoteModel -> {
+            if (animeQuoteModel == null) return;
+            MainActivity context = thisWeakReference.get();
+            if (context != null){
+                startActivity(QuoteActivity.getIntent(context, animeQuoteModel));
             }
         });
-        viewModel.getListLiveData().observe(this, new Observer<ArrayList<AnimeQuoteModel>>() {
-            @Override
-            public void onChanged(ArrayList<AnimeQuoteModel> animeQuoteModels) {
-                MainRecyclerAdapter adapter = new MainRecyclerAdapter(animeQuoteModels, new MainRecyclerAdapter.ShowQuoteButtonListener() {
-                    @Override
-                    public void onShowQuote(AnimeQuoteModel model) {
-                        viewModel.onShowQuoteButtonPressed(model);
-                    }
-                });
-                binding.mainRecyclerView.setAdapter(adapter);
-                binding.mainRecyclerView.setLayoutManager(new LinearLayoutManager(MainActivity.this));
+
+        viewModel.getToastLifeData().observe(this, text -> {
+            if (text == null) return;
+            MainActivity context = thisWeakReference.get();
+            if (context != null){
+                Toast.makeText(context, text, Toast.LENGTH_SHORT).show();
             }
         });
-    }
-
-    @Override
-    public void toast(String text) {
-        Toast.makeText(this, text, Toast.LENGTH_SHORT).show();
-    }
-
-    @Override
-    public void startSecondActivity(AnimeQuoteModel model) {
-        startActivity(QuoteActivity.getIntent(this, model));
     }
 }

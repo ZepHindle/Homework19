@@ -4,9 +4,7 @@ import androidx.lifecycle.MutableLiveData;
 
 import com.chersoft.homework19.data.model.AnimeQuoteModel;
 import com.chersoft.homework19.data.repository.IAnimeRepository;
-import com.chersoft.homework19.presentation.view.View;
 
-import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 
 import io.reactivex.android.schedulers.AndroidSchedulers;
@@ -21,8 +19,9 @@ public class ViewModel extends androidx.lifecycle.ViewModel {
     private final IAnimeRepository repository;
     private final MutableLiveData<Boolean> progressLiveData = new MutableLiveData<>(false);
     private final MutableLiveData<ArrayList<AnimeQuoteModel>> listLiveData = new MutableLiveData<>(new ArrayList<>(0));
+    private final MutableLiveData<AnimeQuoteModel> secondActivityLifeData = new MutableLiveData<>(null);
+    private final MutableLiveData<String> toastLifeData = new MutableLiveData<>(null);
     private Disposable disposable;
-    private WeakReference<View> view;
 
     /**
      * Создает VM с выбранной реализацией репозитория.
@@ -40,12 +39,12 @@ public class ViewModel extends androidx.lifecycle.ViewModel {
         return listLiveData;
     }
 
-    /**
-     * Задает интерфейс view для работы с UI.
-     * @param view реализация интерфейса View
-     */
-    public void setView(View view) {
-        this.view = new WeakReference<>(view);
+    public MutableLiveData<AnimeQuoteModel> getSecondActivityLifeData() {
+        return secondActivityLifeData;
+    }
+
+    public MutableLiveData<String> getToastLifeData() {
+        return toastLifeData;
     }
 
     /**
@@ -53,9 +52,7 @@ public class ViewModel extends androidx.lifecycle.ViewModel {
      * @param model цитата, соответствующая кнопке
      */
     public void onShowQuoteButtonPressed(AnimeQuoteModel model){
-        if (view != null && view.get() != null) {
-            view.get().startSecondActivity(model);
-        }
+        secondActivityLifeData.postValue(model);
     }
 
     /**
@@ -74,11 +71,17 @@ public class ViewModel extends androidx.lifecycle.ViewModel {
                     if (animeQuoteModels != null){
                         listLiveData.postValue(animeQuoteModels);
                     } else if (throwable != null){
-                        if (view != null && view.get() != null){
-                            view.get().toast(throwable.getMessage());
-                        }
+                        toastLifeData.postValue(throwable.getMessage());
                     }
                 });
+    }
+
+    /**
+     * Вызывается при получении ViewModel.
+     */
+    public void onCreate(){
+        secondActivityLifeData.setValue(null);
+        toastLifeData.setValue(null);
     }
 
     private void stopDisposable(){

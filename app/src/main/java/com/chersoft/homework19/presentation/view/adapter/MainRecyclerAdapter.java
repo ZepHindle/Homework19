@@ -29,8 +29,8 @@ public class MainRecyclerAdapter extends RecyclerView.Adapter<MainRecyclerAdapte
         void onShowQuote(AnimeQuoteModel model);
     }
 
-    private ArrayList<AnimeQuoteModel> modelList;
-    private ShowQuoteButtonListener listener;
+    private final ArrayList<AnimeQuoteModel> modelList;
+    private final ShowQuoteButtonListener listener;
 
     /**
      * Создает адаптер.
@@ -71,11 +71,8 @@ public class MainRecyclerAdapter extends RecyclerView.Adapter<MainRecyclerAdapte
         public void bind(final AnimeQuoteModel model, ShowQuoteButtonListener listener){
             binding.animeTextView.setText(model.getAnime());
             binding.characterTextView.setText(model.getCharacter());
-            binding.buttonShowQuote.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View view) {
-                    listener.onShowQuote(model);
-                }
+            binding.buttonShowQuote.setOnClickListener(view -> {
+                listener.onShowQuote(model);
             });
         }
     }
